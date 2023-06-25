@@ -18,6 +18,7 @@ Webアプリケーションの基本的なHTML構造は以下の通りです。
 
 このWebアプリケーションには、以下の要素が含まれています。
 
+- `<nav>`: ロゴとタイトルを載せているナビゲーションバー
 - `<h2>`：アプリケーションのタイトル
 - `<img>`：QRロゴ画像
 - `<p>`：説明文
@@ -26,12 +27,16 @@ Webアプリケーションの基本的なHTML構造は以下の通りです。
 - `<div id="map">`：地図を表示する要素
 - `<table id="csv-table">`：CSVデータを表示するテーブル
 
+## フレームワーク
+Bootstrap 5を使用しています。
+
 ## スタイルとスクリプト
 
 このWebアプリケーションでは、以下の外部リソースを利用しています。
 
 - [Leaflet](https://leafletjs.com)：オープンソースの地図ライブラリ
 - [jQuery](https://jquery.com)：JavaScriptライブラリ
+- [Boostrap](https://getbootstrap.com/)：フレームワーク
 
 ## JavaScriptコード
 
