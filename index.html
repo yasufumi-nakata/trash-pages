@@ -1,45 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Responsive meta tag -->
     <title>ゴミ箱まっぷ！</title>
     <link rel="icon" href="seed-33932.png" type="image/png">
-</head>
-
-<body>
-    <H2>ゴミ箱まっぷ！</H2>
-    <img src="seed-33932.png" alt="QRロゴ" width="100">
-    <p>現在地を取得して、ゴミ箱を探そう！ちょっと位置がずれててもご愛嬌！</p><br>
-    <H3>ピンをクリックするとその場所にあるゴミ箱が表示されます．表をクリックするとピンが黄色くなります．</H3>
-    <a href="https://github.com/yasufumi-nakata/trash-pages">開発ページ</a>
-    <p>問い合わせは s21561yn[at]sfc.keio.ac.jp まで！</p>
-    <p>訂正などはpull requestを送ってください！</p>
-    <p>※このサイトは位置情報を取得します．見られない場合はブラウザを変更してみてください．</p>
-    <dl id="result"></dl>
-
-    <div id="map" style="width: 100%; height: 600px;"></div>
-
-    <!-- Add table to display csv data -->
-    <p>あなたのいる位置</p>
-    <table id="csv-table" border="1">
-        <tr>
-            <th>緯度</th>
-            <th>経度</th>
-            <th>コメント</th>
-        </tr>
-    </table>
-
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
         integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
         crossorigin="" />
+</head>
+
+<body>
+    <nav class="navbar bg-body-tertiary">
+      <div class="container">
+        <a class="navbar-brand" href="#">
+          <img src="seed-33932.png" alt="Logo" width="35" height="35" class="d-inline-block align-text-top">
+          ごみ箱まっぷ！
+        </a>
+      </div>
+    </nav>
+    <div class="container">
+        <p class="mt-3">現在地を取得して、ゴミ箱を探そう！<br>ちょっと位置がずれててもご愛嬌！</p>
+        <h4>ピンをクリックするとその場所にあるゴミ箱が表示されます。<br>
+            表をクリックするとピンが黄色くなります。</h4>
+        <p>※このサイトは位置情報を取得します<br>見られない場合はブラウザを変更してみてください．</p>
+
+        <div id="map" style="width: 100%; height: 600px;"></div>
+        <a href="https://github.com/yasufumi-nakata/trash-pages">開発ページ</a>
+        <p>問い合わせは s21561yn[at]sfc.keio.ac.jp まで！<br>
+        訂正などはpull requestを送ってください！</p>
+
+        <h4>あなたのいる位置</h4>
+        <dl id="result"></dl>
+        <table id="csv-table" class="table table-bordered">
+            <tr>
+                <th>緯度</th>
+                <th>経度</th>
+                <th>内容</th>
+            </tr>
+        </table>
+    </div>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+
     <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
         integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
         crossorigin="">
         </script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Add jQuery for reading the CSV file -->
     <script>
-        var map = L.map('map');
+        const map = L.map('map');
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' }).addTo(map);
 
         // Create a function to create a colored marker
@@ -56,8 +71,8 @@
         }
 
         // Create an object to store markers
-        var markers = {};
-        var selectedMarker = null;
+        const markers = {};
+        let selectedMarker = null;
 
         // Reading the CSV file and add markers with comments to the map
         $.get('locations.csv', function (csvData) {
@@ -103,19 +118,12 @@
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 function (position) {
-                    var data = position.coords;
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    var accLatlng = position.coords.accuracy;
-                    var alt = position.coords.altitude;
-                    var accAlt = position.coords.altitudeAccuracy;
-
-                    var heading = position.coords.heading;
-                    var speed = position.coords.speed;
-
-                    document.getElementById('result').innerHTML = '<dl><dt>緯度</dt><dd>' + lat
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accLatlng = position.coords.accuracy;
+                    document.getElementById('result').innerHTML =
+                        '<dl><dt>緯度</dt><dd>' + lat
                         + '</dd><dt>経度</dt><dd>' + lng
-                        + '</dd><dt>高度</dt><dd>' + alt
                         + '</dd><dt>緯度、経度の精度</dt><dd>' + accLatlng
                         + '</dd></dl>';
 
@@ -126,15 +134,15 @@
                 },
 
                 function (error) {
-                    var errorInfo = [
+                    const errorInfo = [
                         "原因不明のエラーが発生しました…。",
                         "位置情報の取得が許可されませんでした…。",
                         "電波状況などで位置情報が取得できませんでした…。",
                         "位置情報の取得に時間がかかり過ぎてタイムアウトしました…。"
                     ];
 
-                    var errorNo = error.code;
-                    var errorMessage = "[エラー番号: " + errorNo + "]\n" + errorInfo[errorNo];
+                    const errorNo = error.code;
+                    const errorMessage = "[エラー番号: " + errorNo + "]\n" + errorInfo[errorNo];
                     alert(errorMessage);
                     document.getElementById("result").innerHTML = errorMessage;
                 },
@@ -147,7 +155,7 @@
             );
 
         } else {
-            var errorMessage = "お使いの端末は、GeoLacation APIに対応していません。";
+            const errorMessage = "お使いの端末は、GeoLacation APIに対応していません。";
             alert(errorMessage);
             document.getElementById('result').innerHTML = errorMessage;
         }
