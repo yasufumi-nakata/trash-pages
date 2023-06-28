@@ -90,7 +90,7 @@
                         const lng = e.latlng.lng; // longitude
 
                         // Set the popup content including the coordinates
-                        marker.bindPopup('<p>' + locationData[2] + '</p><p>緯度: ' + lat + '</p><p>経度: ' + lng + '</p>').openPopup();
+                        L.popup().setLatLng(e.latlng).setContent('<p>' + locationData[2] + '</p><p>緯度: ' + lat + '</p><p>経度: ' + lng + '</p>').openOn(map);
                     });
 
 
