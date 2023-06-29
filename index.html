@@ -102,9 +102,9 @@
                         const lat = newRow.children('td:first-child').text();
                         const lng = newRow.children('td:first-child').next().text();
                         const latLngKey = lat + ',' + lng;
-                        // If there is a selected marker, change its color back to the default (green)
+                        // If there is a selected marker, change its color back to the default (blue)
                         if (selectedMarker) {
-                            selectedMarker.setIcon(createColoredMarker('green'));
+                            selectedMarker.setIcon(createColoredMarker('blue'));
                         }
                         // Change the color of the associated marker to yellow
                         markers[latLngKey].setIcon(createColoredMarker('yellow'));
