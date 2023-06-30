@@ -154,8 +154,6 @@
                         + '</dd><dt>緯度、経度の精度</dt><dd>' + accLatlng
                         + '</dd></dl>';
 
-                    map.setView([lat, lng], 17);
-
                     // Add user position marker with the red icon
                     L.marker([lat, lng], { icon: createColoredMarker('red') }).addTo(map);
                 },
