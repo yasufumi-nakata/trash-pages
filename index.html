@@ -28,6 +28,9 @@
         <p>※このサイトは位置情報を取得します<br>見られない場合はブラウザを変更してみてください．</p>
 
         <div id="map" style="width: 100%; height: 600px;"></div>
+        <div id="filter">
+            <a id="filter-toggle">&#9660;フィルター</a>
+        </div>
         <a href="https://github.com/yasufumi-nakata/trash-pages">開発ページ</a>
         <p>問い合わせは s21561yn[at]sfc.keio.ac.jp まで！<br>
         訂正などはpull requestを送ってください！</p>
@@ -56,6 +59,7 @@
         </script>
     <script>
         const map = L.map('map');
+        map.setView([35.388126789542376, 139.4269171636552], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' }).addTo(map);
 
         // Create a function to create a colored marker
@@ -78,10 +82,11 @@
         // Reading the CSV file and add markers with comments to the map
         $.get('locations.csv', function (csvData) {
             const csvLines = csvData.split('\n');
+            const trashSet = new Set();
             for (let i = 1; i < csvLines.length; i++) {
                 const locationData = csvLines[i].split(',');
                 if (locationData.length === 3) {
-                    const marker = L.marker([locationData[0], locationData[1]]).addTo(map);
+                    const marker = L.marker([locationData[0], locationData[1]], { title: locationData[2].trim() }).addTo(map);
                     // Add the marker to the markers object
                     markers[locationData[0] + ',' + locationData[1]] = marker;
                     marker.on('click', function (e) {
@@ -92,6 +97,7 @@
                         // Set the popup content including the coordinates
                         marker.bindPopup('<p>' + locationData[2] + '</p><p>緯度: ' + lat + '</p><p>経度: ' + lng + '</p>').openPopup();
                     });
+                    locationData[2].split('／').map(e => trashSet.add(e.trim()));
 
 
                     // Create a new table row
@@ -114,6 +120,26 @@
                     $('#csv-table').append(newRow);
                 }
             }
+            const trashList = Array.from(trashSet).sort();
+            const checkBoxList = trashList.map((e, i) => $('<li></li>').append($('<input type="checkbox" class="filter-element" id="filter-' + i + '">' + e)).append($('<label for="filter-' + i + '">' + e + '</label>')));
+            $('#filter').append($('<ul id="filter-list" class="list-unstyled"></ul>').hide().append($('<button id="apply-filter">適用</button>').click(function () {
+                const checkedList = $('.filter-element:checked').map((i, e) => $('label[for="' + $(e).attr('id') + '"]').text()).get();
+                const appearMarkerList = Object.keys(markers).filter(e => checkedList.every(f => markers[e].options.title.split('／').includes(f)));
+                const hideMarkerList = Object.keys(markers).filter(e => !appearMarkerList.includes(e));
+                appearMarkerList.forEach(function (e) {
+                    if (!map.hasLayer(markers[e])) {
+                        map.addLayer(markers[e]);
+                    }
+                });
+                hideMarkerList.forEach(function (e) {
+                    if (map.hasLayer(markers[e])) {
+                        map.removeLayer(markers[e]);
+                    }
+                });
+            })).append(...checkBoxList));
+            $('#filter-toggle').click(function () {
+                $('#filter-list').slideToggle(300);
+            });
         });
 
         if (navigator.geolocation) {
