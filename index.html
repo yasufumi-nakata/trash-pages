@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Responsive meta tag -->
+    <title>ゴミ箱まっぷ！</title>
+    <link rel="manifest" href="manifest.json">
+    <script defer src="./app.js"></script>
+    <link rel="icon" href="seed-33932.png" type="image/png">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin="" />
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar justify-content-center">
+            <a class="navbar-brand" href="#">
+              <img src="seed-33932.png" alt="Logo" style="width: 35px; height: 35px;" class="d-inline-block align-text-top">
+              ごみ箱まっぷ！
+            </a>
+        </nav>
+        <p class="mt-3">現在地を取得して、ゴミ箱を探そう！<br>ちょっと位置がずれててもご愛嬌！</p>
+        <h4>ピンをクリックするとその場所にあるゴミ箱が表示されます。<br>
+            表をクリックするとピンが黄色くなります。</h4>
+        <p>※このサイトは位置情報を取得します<br>見られない場合はブラウザを変更してみてください．</p>
+
+        <div id="map" style="width: 100%; height: 600px;"></div>
+        <div id="filter">
+            <a id="filter-toggle">&#9660;フィルター</a>
+        </div>
+        <a href="https://github.com/yasufumi-nakata/trash-pages">開発ページ</a>
+        <p>問い合わせは yasufumi[at]sfc.keio.ac.jp まで！<br>
+        訂正などはpull requestを送ってください！</p>
+
+        <h4>あなたのいる位置</h4>
+        <dl id="result"></dl>
+        <div id="csv-table-wrapper" style="overflow-x: auto;">
+        <table id="csv-table" class="table table-bordered" style="white-space: nowrap;">
+            <tr>
+                <th>緯度</th>
+                <th>経度</th>
+                <th>内容</th>
+            </tr>
+        </table>
+            </div>
+            
+    </div>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+        integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+        crossorigin="">
+        </script>
+    <script>
+        const map = L.map('map');
+        map.setView([35.388126789542376, 139.4269171636552], 17);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>' }).addTo(map);
+
+        // Create a function to create a colored marker
+        function createColoredMarker(color) {
+            return L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-' + color + '.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                shadowSize: [41, 41],
+                shadowAnchor: [14, 41],
+                popupAnchor: [1, -34],
+            });
+        }
+
+        // Create an object to store markers
+        const markers = {};
+        let selectedMarker = null;
+
+        // Reading the CSV file and add markers with comments to the map
+        $.get('locations.csv', function (csvData) {
+            const csvLines = csvData.split('\n');
+            const trashSet = new Set();
+            for (let i = 1; i < csvLines.length; i++) {
+                const locationData = csvLines[i].split(',');
+                if (locationData.length === 3) {
+                    const marker = L.marker([locationData[0], locationData[1]], { title: locationData[2].trim() }).addTo(map);
+                    // Add the marker to the markers object
+                    markers[locationData[0] + ',' + locationData[1]] = marker;
+                    marker.on('click', function (e) {
+                        // Get the coordinates of the marker
+                        const lat = e.latlng.lat; // latitude
+                        const lng = e.latlng.lng; // longitude
+
+                        // Set the popup content including the coordinates
+                        L.popup().setLatLng(e.latlng).setContent('<p>' + locationData[2] + '</p><p>緯度: ' + lat + '</p><p>経度: ' + lng + '</p>').openOn(map);
+                    });
+                    locationData[2].split('／').map(e => trashSet.add(e.trim()));
+
+
+                    // Create a new table row
+                    const newRow = $('<tr><td>' + locationData[0] + '</td><td>' + locationData[1] + '</td><td>' + locationData[2] + '</td></tr>');
+                    // Add a click event listener to the new table row
+                    newRow.click(function () {
+                        // Get the coordinates from the table row
+                        const lat = newRow.children('td:first-child').text();
+                        const lng = newRow.children('td:first-child').next().text();
+                        const latLngKey = lat + ',' + lng;
+                        // If there is a selected marker, change its color back to the default (blue)
+                        if (selectedMarker) {
+                            selectedMarker.setIcon(createColoredMarker('blue'));
+                        }
+                        // Change the color of the associated marker to yellow
+                        markers[latLngKey].setIcon(createColoredMarker('yellow'));
+                        selectedMarker = markers[latLngKey];
+                    });
+                    // Add the new table row to the table
+                    $('#csv-table').append(newRow);
+                }
+            }
+            const trashList = Array.from(trashSet).sort();
+            const checkBoxList = trashList.map((e, i) => $('<li></li>').append($('<input type="checkbox" class="filter-element" id="filter-' + i + '">' + e)).append($('<label for="filter-' + i + '">' + e + '</label>')));
+            $('#filter').append($('<ul id="filter-list" class="list-unstyled"></ul>').hide().append($('<button id="apply-filter">適用</button>').click(function () {
+                const checkedList = $('.filter-element:checked').map((i, e) => $('label[for="' + $(e).attr('id') + '"]').text()).get();
+                const appearMarkerList = Object.keys(markers).filter(e => checkedList.every(f => markers[e].options.title.split('／').includes(f)));
+                const hideMarkerList = Object.keys(markers).filter(e => !appearMarkerList.includes(e));
+                appearMarkerList.forEach(function (e) {
+                    if (!map.hasLayer(markers[e])) {
+                        map.addLayer(markers[e]);
+                    }
+                });
+                hideMarkerList.forEach(function (e) {
+                    if (map.hasLayer(markers[e])) {
+                        map.removeLayer(markers[e]);
+                    }
+                });
+            })).append(...checkBoxList));
+            $('#filter-toggle').click(function () {
+                $('#filter-list').slideToggle(300);
+            });
+        });
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accLatlng = position.coords.accuracy;
+                    document.getElementById('result').innerHTML =
+                        '<dl><dt>緯度</dt><dd>' + lat
+                        + '</dd><dt>経度</dt><dd>' + lng
+                        + '</dd><dt>緯度、経度の精度</dt><dd>' + accLatlng
+                        + '</dd></dl>';
+
+                    // Add user position marker with the red icon
+                    L.marker([lat, lng], { icon: createColoredMarker('red') }).addTo(map);
+                },
+
+                function (error) {
+                    const errorInfo = [
+                        "原因不明のエラーが発生しました…。",
+                        "位置情報の取得が許可されませんでした…。",
+                        "電波状況などで位置情報が取得できませんでした…。",
+                        "位置情報の取得に時間がかかり過ぎてタイムアウトしました…。"
+                    ];
+
+                    const errorNo = error.code;
+                    const errorMessage = "[エラー番号: " + errorNo + "]\n" + errorInfo[errorNo];
+                    alert(errorMessage);
+                    document.getElementById("result").innerHTML = errorMessage;
+                },
+
+                {
+                    "enableHighAccuracy": true,
+                    "timeout": 8000,
+                    "maximumAge": 2000,
+                }
+            );
+
+        } else {
+            const errorMessage = "お使いの端末は、GeoLocation APIに対応していません。";
+            alert(errorMessage);
+            document.getElementById('result').innerHTML = errorMessage;
+        }
+    </script>
+</body>
+
+</html>
